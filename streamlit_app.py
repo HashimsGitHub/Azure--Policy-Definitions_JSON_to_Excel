@@ -64,9 +64,12 @@ if uploaded_file is not None:
             "Versions": versions
         }
         records.append(metadata)    
-        
+
     # --- Create DataFrame ---
     df_policies = pd.DataFrame(records)
+
+    # Add an index column (starting from 1)
+    df_policies.insert(0, 'Index', range(1, len(df_policies) + 1))
     
     # --- Excel File Creation ---
     wb = Workbook()
@@ -81,11 +84,13 @@ if uploaded_file is not None:
     
     # --- Add Title and Data to Excel ---
     ws.append(["Azure Policy Definitions"])
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=6)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
     ws["A1"].font = title_font
     ws["A1"].alignment = align_center
     ws.append([""])
-    ws.append(["Policy ID", "Display Name", "Description", "Category", "Policy Type", "Effect", "Versions"])
+
+    # Add header row with 'Index'
+    ws.append(["Index", "Policy ID", "Display Name", "Description", "Category", "Policy Type", "Effect", "Versions"])
 
     # Style headers
     for i in range(1, len(df_policies.columns) + 1):
@@ -131,6 +136,6 @@ st.markdown("""
     <hr style="margin-top:40px;">
     <div style="text-align:center; color:gray; font-size:14px;">
         Built with ❤️ using Streamlit & Microsoft Azure<br>
-        © 2025 Hashim Hilal — Cloud Architect | DXC Technology
+        © 2025 Hashim Hilal — Cloud Architect 
     </div>
 """, unsafe_allow_html=True)
