@@ -71,6 +71,9 @@ if uploaded_file is not None:
     # Add an index column (starting from 1)
     df_policies.insert(0, 'Index', range(1, len(df_policies) + 1))
     
+    # Reset index to remove the unnamed index column added by Streamlit
+    df_policies = df_policies.reset_index(drop=True)
+
     # --- Excel File Creation ---
     wb = Workbook()
     ws = wb.active
