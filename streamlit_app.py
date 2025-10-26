@@ -33,11 +33,6 @@ def format_location(loc: str) -> str:
     }
     return region_map.get(loc_lower, loc)
 
-# --- Extract the last part of the Policy ID ---
-def extract_policy_id(full_id: str) -> str:
-    """Extract the GUID part from the full policy ID."""
-    return full_id.split('/')[-1] if full_id else ""
-
 # --- File Upload Section ---
 uploaded_file = st.file_uploader("📂 Upload your Azure Policy Definitions JSON file", type="json")
 
@@ -46,16 +41,20 @@ if uploaded_file is not None:
     data = json.load(uploaded_file)
     records = []
     
+    # Extract important fields
     for policy in data:
         description = policy.get("description", "")
         display_name = policy.get("displayName", "")
-        policy_id = extract_policy_id(policy.get("id", ""))  # Updated here
+        policy_id = policy.get("id", "")
+        policy_id = policy_id.split('/')[-1] if policy_id else ""  # Extract only GUID
         category = policy.get("metadata", {}).get("category", "")
         policy_type = policy.get("policyType", "")
         effect = policy.get("policyRule", {}).get("then", {}).get("effect", "None")
         versions = ", ".join(policy.get("versions", []))
+        
+        # Store extracted data
         metadata = {
-            "Policy ID": policy_id,  # Now showing only the GUID
+            "Policy ID": policy_id,
             "Display Name": display_name,
             "Description": description,
             "Category": category,
@@ -63,18 +62,14 @@ if uploaded_file is not None:
             "Effect": effect,
             "Versions": versions
         }
-        records.append(metadata)    
-
+        records.append(metadata)
+    
     # --- Create DataFrame ---
     df_policies = pd.DataFrame(records)
 
-    # Add an index column (starting from 1) for the Excel output
+    # --- For Excel: Add the "Index" column ---
     df_policies_for_excel = df_policies.copy()
     df_policies_for_excel.insert(0, 'Index', range(1, len(df_policies_for_excel) + 1))
-
-    
-    # Reset index to remove the unnamed index column added by Streamlit
-    df_policies = df_policies.reset_index(drop=True)
 
     # --- Excel File Creation ---
     wb = Workbook()
@@ -86,7 +81,7 @@ if uploaded_file is not None:
     align_center = Alignment(horizontal="center")
     border = Border(left=Side(style="thin"), right=Side(style="thin"),
                     top=Side(style="thin"), bottom=Side(style="thin"))
-    
+
     # --- Add Title and Data to Excel ---
     ws.append(["Azure Policy Definitions"])
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
@@ -102,7 +97,7 @@ if uploaded_file is not None:
         cell = ws[f"{get_column_letter(i)}{ws.max_row}"]
         cell.font = bold
         cell.fill = hdr_fill
-        
+
     # Add the rows to Excel
     for row in df_policies_for_excel.itertuples(index=False):
         ws.append(list(row))
@@ -120,12 +115,14 @@ if uploaded_file is not None:
     wb.save(excel_file)
     excel_file.seek(0)
 
-    # --- Display Tables on Streamlit UI (without Index) ---
-    df_policies_display = df_policies.drop(columns=['Index'])  # Remove "Index" column for web display
+    # --- For Streamlit Web Display: Do not include "Index" ---
+    df_policies_display = df_policies  # No "Index" column here
+
+    # Display the table on Streamlit without the "Index" column
     st.markdown("### 📘 Policy Definitions Overview")
     st.dataframe(df_policies_display, use_container_width=True)
 
-    # --- Download Button ---
+    # --- Streamlit Download Button ---
     st.download_button(
         label="💾 Download Excel Report",
         data=excel_file,
@@ -142,6 +139,6 @@ st.markdown("""
     <hr style="margin-top:40px;">
     <div style="text-align:center; color:gray; font-size:14px;">
         Built with ❤️ using Streamlit & Microsoft Azure<br>
-        © 2025 Hashim Hilal — Cloud Architect 
+        © 2025 Hashim Hilal — Cloud Architect
     </div>
 """, unsafe_allow_html=True)
