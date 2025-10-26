@@ -68,11 +68,13 @@ if uploaded_file is not None:
     # --- Create DataFrame ---
     df_policies = pd.DataFrame(records)
 
-    # Add an index column (starting from 1)
-    df_policies.insert(0, 'Index', range(1, len(df_policies) + 1))
+    # Add an index column (starting from 1) for the Excel output
+    df_policies_for_excel = df_policies.copy()
+    df_policies_for_excel.insert(0, 'Index', range(1, len(df_policies_for_excel) + 1))
+
     
     # Reset index to remove the unnamed index column added by Streamlit
-    df_policies = df_policies.reset_index(drop=True)
+    # df_policies = df_policies.reset_index(drop=True)
 
     # --- Excel File Creation ---
     wb = Workbook()
@@ -92,17 +94,17 @@ if uploaded_file is not None:
     ws["A1"].alignment = align_center
     ws.append([""])
 
-    # Add header row with 'Index'
+    # Add header row with 'Index' (only for Excel)
     ws.append(["Index", "Policy ID", "Display Name", "Description", "Category", "Policy Type", "Effect", "Versions"])
 
     # Style headers
-    for i in range(1, len(df_policies.columns) + 1):
+    for i in range(1, len(df_policies_for_excel.columns) + 1):
         cell = ws[f"{get_column_letter(i)}{ws.max_row}"]
         cell.font = bold
         cell.fill = hdr_fill
-    
+        
     # Add the rows to Excel
-    for row in df_policies.itertuples(index=False):
+    for row in df_policies_for_excel.itertuples(index=False):
         ws.append(list(row))
 
     # --- Apply borders and column width adjustments ---
@@ -118,9 +120,10 @@ if uploaded_file is not None:
     wb.save(excel_file)
     excel_file.seek(0)
 
-    # --- Display Tables on Streamlit UI ---
+    # --- Display Tables on Streamlit UI (without Index) ---
+    df_policies_display = df_policies.drop(columns=['Index'])  # Remove "Index" column for web display
     st.markdown("### 📘 Policy Definitions Overview")
-    st.dataframe(df_policies, use_container_width=True)
+    st.dataframe(df_policies_display, use_container_width=True)
 
     # --- Download Button ---
     st.download_button(
