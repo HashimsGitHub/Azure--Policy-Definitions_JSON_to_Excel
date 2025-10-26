@@ -33,6 +33,11 @@ def format_location(loc: str) -> str:
     }
     return region_map.get(loc_lower, loc)
 
+# --- Extract the last part of the Policy ID ---
+def extract_policy_id(full_id: str) -> str:
+    """Extract the GUID part from the full policy ID."""
+    return full_id.split('/')[-1] if full_id else ""
+
 # --- File Upload Section ---
 uploaded_file = st.file_uploader("📂 Upload your Azure Policy Definitions JSON file", type="json")
 
@@ -44,13 +49,13 @@ if uploaded_file is not None:
     for policy in data:
         description = policy.get("description", "")
         display_name = policy.get("displayName", "")
-        policy_id = policy.get("id", "")
+        policy_id = extract_policy_id(policy.get("id", ""))  # Updated here
         category = policy.get("metadata", {}).get("category", "")
         policy_type = policy.get("policyType", "")
         effect = policy.get("policyRule", {}).get("then", {}).get("effect", "None")
         versions = ", ".join(policy.get("versions", []))
         metadata = {
-            "Policy ID": policy_id,
+            "Policy ID": policy_id,  # Now showing only the GUID
             "Display Name": display_name,
             "Description": description,
             "Category": category,
@@ -58,8 +63,8 @@ if uploaded_file is not None:
             "Effect": effect,
             "Versions": versions
         }
-        records.append(metadata)
-    
+        records.append(metadata)    
+        
     # --- Create DataFrame ---
     df_policies = pd.DataFrame(records)
     
