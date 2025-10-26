@@ -3,10 +3,10 @@ import pandas as pd
 import json
 from io import BytesIO
 
-st.set_page_config(page_title="Azure Policy Viewer", layout="wide")
-st.title("📜 Azure Policy Definitions Viewer")
+st.set_page_config(page_title="Azure Policy Explorer", layout="wide")
+st.title("📘 Azure Policy Definitions Explorer")
 
-uploaded_file = st.file_uploader("Upload your Azure Policy JSON file", type=["json"])
+uploaded_file = st.file_uploader("Upload Azure Policy JSON file", type=["json"])
 
 if uploaded_file:
     try:
@@ -30,13 +30,13 @@ if uploaded_file:
             rule_then = json.dumps(rule.get("then", {}), indent=2)
 
             records.append({
-                "Name": item.get("name"),
-                "ID": item.get("id"),
-                "Type": item.get("type"),
                 "Display Name": props.get("displayName"),
                 "Description": props.get("description"),
                 "Policy Type": props.get("policyType"),
                 "Mode": props.get("mode"),
+                "Name": item.get("name"),
+                "ID": item.get("id"),
+                "Type": item.get("type"),
                 "Parameters": param_str,
                 "Rule - IF": rule_if,
                 "Rule - THEN": rule_then
@@ -44,10 +44,10 @@ if uploaded_file:
 
         df = pd.DataFrame(records)
 
-        st.subheader("📊 Policy Definitions Table")
+        st.subheader("📊 All Azure Policy Definitions")
         st.dataframe(df, use_container_width=True)
 
-        # Convert to Excel
+        # Excel export function
         def to_excel(df):
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -67,7 +67,7 @@ if uploaded_file:
         excel_data = to_excel(df)
 
         st.download_button(
-            label="📥 Download Excel File",
+            label="📥 Download Full Excel File",
             data=excel_data,
             file_name="AzurePolicyDefinitions.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
