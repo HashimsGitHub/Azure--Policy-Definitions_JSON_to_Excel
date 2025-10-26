@@ -12,22 +12,37 @@ if uploaded_file:
     try:
         data = json.load(uploaded_file)
 
-        # Flatten the list of policy definitions
-        df = pd.json_normalize(
-            data,
-            sep='_',
-            record_path=None,
-            meta=[
-                'name',
-                'id',
-                'type',
-                ['properties', 'displayName'],
-                ['properties', 'description'],
-                ['properties', 'policyType'],
-                ['properties', 'mode']
-            ],
-            errors='ignore'
-        )
+        # Flatten each policy definition
+        records = []
+        for item in data:
+            props = item.get("properties", {})
+            rule = props.get("policyRule", {})
+            parameters = props.get("parameters", {})
+
+            # Flatten parameters into readable string
+            param_str = "\n".join([
+                f"{key}: {val.get('type', '')} - {val.get('metadata', {}).get('description', '')}"
+                for key, val in parameters.items()
+            ]) if parameters else ""
+
+            # Safely stringify mixed-type policyRule logic
+            rule_if = json.dumps(rule.get("if", {}), indent=2)
+            rule_then = json.dumps(rule.get("then", {}), indent=2)
+
+            records.append({
+                "Name": item.get("name"),
+                "ID": item.get("id"),
+                "Type": item.get("type"),
+                "Display Name": props.get("displayName"),
+                "Description": props.get("description"),
+                "Policy Type": props.get("policyType"),
+                "Mode": props.get("mode"),
+                "Parameters": param_str,
+                "Rule - IF": rule_if,
+                "Rule - THEN": rule_then
+            })
+
+        df = pd.DataFrame(records)
 
         st.subheader("📊 Policy Definitions Table")
         st.dataframe(df, use_container_width=True)
@@ -45,7 +60,7 @@ if uploaded_file:
                 })
                 for col_num, value in enumerate(df.columns.values):
                     worksheet.write(0, col_num, value, header_format)
-                    worksheet.set_column(col_num, col_num, 30)
+                    worksheet.set_column(col_num, col_num, 40)
             output.seek(0)
             return output
 
