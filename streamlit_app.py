@@ -74,7 +74,7 @@ if uploaded_file is not None:
 
     
     # Reset index to remove the unnamed index column added by Streamlit
-    # df_policies = df_policies.reset_index(drop=True)
+    df_policies = df_policies.reset_index(drop=True)
 
     # --- Excel File Creation ---
     wb = Workbook()
